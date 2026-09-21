@@ -36,6 +36,10 @@ func _enhanced_render_callback(render_size : Vector2i):
 		
 		temp_intensity = intensity * capped_frame_time / delta_time
 	
+	var reference_delta: float = 1.0 / 60;
+	
+	var framerate_normalization_factor: float = reference_delta / delta_time
+	
 	var max_x_size: Vector2i = EasyRenderingUtils.divide_vector2i_by_tile_size(render_size, Vector2i(tile_size, 1))
 	
 	var neighbor_max_size: Vector2i = EasyRenderingUtils.divide_vector2i_by_tile_size(render_size, Vector2i(tile_size, tile_size))
@@ -68,7 +72,8 @@ func _enhanced_render_callback(render_size : Vector2i):
 		velocity_threshold_upper / 100.0,
 		_current_render_scene_buffers.get_scaling_3d_mode() == RenderingServer.ViewportScaling3DMode.VIEWPORT_SCALING_3D_MODE_FSR2,
 		temp_intensity,
-		tile_size
+		tile_size,
+		framerate_normalization_factor,
 	])
 	
 	var tile_max_x_push_constants: PackedByteArray = EasyRenderingUtils.get_push_constants([], [tile_size], false)

@@ -117,6 +117,11 @@ layout(push_constant, std430) uniform Params {
 	float support_fsr2;
 	float motion_blur_intensity;
 	float tile_size;
+
+	float framerate_normalization_factor;
+	float pad1;
+	float pad2;
+	float pad3;
 }
 params;
 
@@ -270,15 +275,18 @@ void main() {
 	// ---------------------------------------------------
 	
 	// Here is where we apply the velocity thresholds and the intensity, customized by the user. Note that we scale
-	// the velocity that's fed into the thresholds so to negate the effects on aspect ratio on the perceived length of the 
-	// velocity.
+	// the velocity's y component that's fed into the thresholds to counter the effects on aspect ratio on its perceived length.
+	// Also note that we apply framerate normalization on the velocity fed to the thresholds. The point of the velocity
+	// thresholds is to be aware of human's eye tracking capabilities, keeping eye-trackable objects crisp.
+	// This revolve around the object's speed across the screen which is framerate-independent, meaning activation of the
+	// blur should also be framerate-independent.
+	float thresholds_multiplier = sharp_step(params.velocity_threshold_lower, params.velocity_threshold_upper, length(total_velocity.xy * vec2(float(render_size.x) / float(render_size.y), 1)) * params.framerate_normalization_factor * params.motion_blur_intensity);
+
 	// If the previous position is happening behind the camera's near clip plane, which can happen when the camera moves backwards at high speed,
 	// the w component of the projected vector would be negative, and the velocity vector would be flipped.
 	// This happens with Godot's native motion vectors as well. We can detect this and flip them back, avoiding
 	// crazy artifacts.
-	float thresholds_multiplier = sharp_step(params.velocity_threshold_lower, params.velocity_threshold_upper, length(total_velocity.xy * vec2(float(render_size.x) / float(render_size.y), 1)) * params.motion_blur_intensity);
-
-	total_velocity.xy *=  thresholds_multiplier * render_size * (view_past_ndc_cache.w < 0 ? -1 : 1) * params.motion_blur_intensity;
+	total_velocity.xy *= thresholds_multiplier * render_size * (view_past_ndc_cache.w < 0 ? -1 : 1) * params.motion_blur_intensity;
 
 	// Now we clamp the velocity magnitudes to the tile size. This avoids saturating tiles and
 	// revealing the seams between them. It also tames the velocities in general, otherwise
