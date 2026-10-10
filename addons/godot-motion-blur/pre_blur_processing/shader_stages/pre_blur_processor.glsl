@@ -1,6 +1,8 @@
 #[compute]
 #version 450
 
+// ENGINE_VERSION
+
 #define FLT_MAX 3.402823466e+38
 #define FLT_MIN 1.175494351e-38
 #define PIXEL_RADIUS_SQUARED 0.25
@@ -79,8 +81,10 @@ struct SceneData {
 
 	vec4 ambient_light_color_energy;
 
+#if defined(ENGINE_VERSION_4_8)
 	vec3 reflection_color;
 	uint pad;
+#endif
 
 	float ambient_color_sky_mix;
 	float fog_density;
